@@ -19,7 +19,9 @@
     .layout { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr); gap:18px; align-items:start; }
     .card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:22px; box-shadow:0 5px 22px #303a2910; }
     .card h2 { margin:0 0 18px; font-size:18px; letter-spacing:-.02em; }
-    .fields { display:grid; grid-template-columns:1.4fr .8fr .8fr; gap:10px; }
+    .fields { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(110px,.8fr) minmax(110px,.8fr); gap:10px; }
+    .reps-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(105px,1fr)); gap:10px; margin-top:12px; }
+    .reps-heading { margin:17px 0 0; color:var(--muted); font-size:12px; font-weight:600; }
     label { display:block; color:var(--muted); font-size:12px; font-weight:600; }
     input, select { width:100%; margin-top:6px; padding:11px 12px; border:1px solid var(--line); border-radius:10px; outline:none; background:white; color:var(--ink); font:inherit; }
     input:focus,select:focus { border-color:#78937a; box-shadow:0 0 0 3px #315e4518; }
@@ -64,13 +66,15 @@
 
     <div class="layout">
       <section class="card" aria-labelledby="formTitle">
-        <h2 id="formTitle">记录一组训练</h2>
+        <h2 id="formTitle">记录一次训练</h2>
         <form id="entryForm">
           <div class="fields">
             <label>训练动作<select id="exercise" required><option value="" disabled selected>选择训练动作</option><option>杠铃卧推</option><option>哑铃卧推</option><option>器械推胸</option><option>双杠臂屈伸</option><option>夹胸</option><option>哑铃推肩</option><option>哑铃侧平举</option><option>绳索侧平举</option><option>杠铃提拉</option><option>反向蝴蝶机飞鸟</option><option>绳索面拉</option><option>引体向上</option><option>高位下拉</option><option>单臂下拉</option><option>器械划船</option><option>绳索划船</option><option>T杆划船</option><option>悬垂举腿</option><option>杠铃深蹲</option><option>倒蹬</option><option>哈克深蹲</option><option>腿屈伸</option><option>腿内收</option><option>哑铃弯举</option><option>杠铃弯举</option><option>锤式弯举</option><option>绳索臂屈伸</option><option>直杆臂屈伸</option><option>杠铃臂屈伸</option><option>健腹轮</option></select></label>
             <label>重量<div class="unit-wrap"><input id="weight" type="number" min="0" max="9999" step="0.5" placeholder="60" required><span class="unit">kg</span></div></label>
-            <label>次数<div class="unit-wrap"><input id="reps" type="number" min="1" max="999" step="1" placeholder="8" required><span class="unit">次</span></div></label>
+            <label>组数<select id="sets" required><option value="1">1 组</option><option value="2">2 组</option><option value="3" selected>3 组</option><option value="4">4 组</option><option value="5">5 组</option><option value="6">6 组</option><option value="7">7 组</option><option value="8">8 组</option><option value="9">9 组</option><option value="10">10 组</option></select></label>
           </div>
+          <p class="reps-heading">每组次数</p>
+          <div id="repsFields" class="reps-fields" aria-live="polite"></div>
           <button class="add" type="submit">＋ 添加训练记录</button>
         </form>
         <p class="notice">数据保存在当前浏览器中，换设备或清除浏览器数据后不会同步。</p>
@@ -93,8 +97,23 @@
       const form = document.getElementById('entryForm');
       const exerciseInput = document.getElementById('exercise');
       const weightInput = document.getElementById('weight');
-      const repsInput = document.getElementById('reps');
+      const setsInput = document.getElementById('sets');
+      const repsFields = document.getElementById('repsFields');
       const entriesEl = document.getElementById('entries');
+      const renderRepFields = () => {
+        const count = Number(setsInput.value);
+        repsFields.replaceChildren();
+        for (let index = 0; index < count; index++) {
+          const label = document.createElement('label');
+          label.textContent = `第 ${index + 1} 组`;
+          const wrap = document.createElement('div'); wrap.className = 'unit-wrap';
+          const input = document.createElement('input');
+          input.type = 'number'; input.min = '1'; input.max = '999'; input.step = '1';
+          input.placeholder = '8'; input.required = true; input.setAttribute('aria-label', `第 ${index + 1} 组次数`);
+          const unit = document.createElement('span'); unit.className = 'unit'; unit.textContent = '次';
+          wrap.append(input, unit); label.append(wrap); repsFields.append(label);
+        }
+      };
       const localDate = (date = new Date()) => {
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -127,7 +146,7 @@
             const row = document.createElement('div'); row.className = 'entry';
             const name = document.createElement('div');
             const exercise = document.createElement('div'); exercise.className = 'exercise'; exercise.textContent = item.exercise;
-            const details = document.createElement('div'); details.className = 'details'; details.textContent = `${item.reps} 次`; name.append(exercise, details);
+            const details = document.createElement('div'); details.className = 'details'; details.textContent = item.setNumber ? `第 ${item.setNumber} 组 · ${item.reps} 次` : `${item.reps} 次`; name.append(exercise, details);
             const load = document.createElement('div'); load.className = 'load'; load.textContent = `${item.weight} kg`;
             const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'remove'; remove.setAttribute('aria-label', `删除${item.exercise}记录`); remove.textContent = '×';
             remove.addEventListener('click', () => { records = records.filter(record => record.id !== item.id); save(); render(); });
@@ -148,11 +167,15 @@
       };
       dateInput.value = localDate();
       dateInput.addEventListener('change', render);
+      setsInput.addEventListener('change', renderRepFields);
+      renderRepFields();
       form.addEventListener('submit', event => {
         event.preventDefault();
         if (!form.reportValidity()) return;
-        records.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, date: dateInput.value, exercise: exerciseInput.value.trim(), weight: Number(weightInput.value), reps: Number(repsInput.value), createdAt: Date.now() });
-        save(); form.reset(); exerciseInput.focus(); render();
+        const createdAt = Date.now();
+        const reps = [...repsFields.querySelectorAll('input')].map(input => Number(input.value));
+        reps.forEach((count, index) => records.push({ id: `${createdAt}-${index}-${Math.random().toString(36).slice(2)}`, date: dateInput.value, exercise: exerciseInput.value, weight: Number(weightInput.value), reps: count, setNumber: index + 1, createdAt: createdAt + index }));
+        save(); form.reset(); renderRepFields(); exerciseInput.focus(); render();
       });
       render();
     })();

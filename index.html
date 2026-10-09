@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4ef">
+  <title>训练日记</title>
+  <style>
+    :root { color-scheme: light; --ink:#20251f; --muted:#777d73; --line:#e6e7df; --green:#315e45; --soft:#eef2e9; }
+    * { box-sizing:border-box }
+    body { margin:0; background:#f5f4ef; color:var(--ink); font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { max-width:920px; margin:0 auto; padding:48px 24px 72px; }
+    header { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:28px; }
+    .eyebrow { margin:0 0 6px; color:var(--green); font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { margin:0; font-size:clamp(30px,5vw,42px); letter-spacing:-.04em; line-height:1.1; }
+    .subtitle { margin:10px 0 0; color:var(--muted); }
+    .date-box { color:var(--muted); font-size:13px; text-align:right; white-space:nowrap; }
+    .date-box input { display:block; margin-top:6px; padding:9px 11px; border:1px solid var(--line); border-radius:10px; background:white; color:var(--ink); font:inherit; }
+    .layout { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr); gap:18px; align-items:start; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:22px; box-shadow:0 5px 22px #303a2910; }
+    .card h2 { margin:0 0 18px; font-size:18px; letter-spacing:-.02em; }
+    .fields { display:grid; grid-template-columns:1.4fr .8fr .8fr; gap:10px; }
+    label { display:block; color:var(--muted); font-size:12px; font-weight:600; }
+    input, select { width:100%; margin-top:6px; padding:11px 12px; border:1px solid var(--line); border-radius:10px; outline:none; background:white; color:var(--ink); font:inherit; }
+    input:focus,select:focus { border-color:#78937a; box-shadow:0 0 0 3px #315e4518; }
+    .unit-wrap { position:relative; }
+    .unit-wrap input { padding-right:46px; }
+    .unit { position:absolute; right:12px; bottom:11px; color:#92978f; font-size:12px; pointer-events:none; }
+    button { border:0; border-radius:10px; padding:11px 16px; background:var(--green); color:white; font:inherit; font-weight:650; cursor:pointer; transition:transform .15s,background .15s; }
+    button:hover { background:#244b36; transform:translateY(-1px); }
+    button:focus-visible { outline:3px solid #a9c5a8; outline-offset:2px; }
+    .add { width:100%; margin-top:14px; }
+    .entries { display:flex; flex-direction:column; gap:9px; }
+    .entry { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:14px; padding:13px 14px; background:#fafbf8; border:1px solid #eef0e9; border-radius:12px; }
+    .exercise { font-weight:650; }
+    .details { margin-top:2px; color:var(--muted); font-size:13px; }
+    .load { font-size:15px; font-weight:700; white-space:nowrap; }
+    .remove { padding:6px 9px; background:transparent; color:#92978f; font-size:18px; line-height:1; }
+    .remove:hover { background:#f7e9e6; color:#a34739; transform:none; }
+    .empty { padding:24px 14px; border:1px dashed var(--line); border-radius:12px; color:var(--muted); text-align:center; }
+    .summary { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:19px; }
+    .stat { padding:13px; background:var(--soft); border-radius:12px; }
+    .stat strong { display:block; font-size:22px; letter-spacing:-.04em; }
+    .stat span { color:var(--muted); font-size:12px; }
+    .history { display:flex; flex-direction:column; gap:8px; }
+    .history-row { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid #f0f1eb; font-size:13px; }
+    .history-row:last-child { border-bottom:0; }
+    .history-date { color:var(--muted); }
+    .history-count { font-weight:650; }
+    .section-head { display:flex; justify-content:space-between; align-items:center; margin:26px 0 13px; }
+    .section-head h2 { margin:0; font-size:18px; }
+    .section-head span { color:var(--muted); font-size:12px; }
+    .notice { margin:15px 0 0; color:var(--muted); font-size:12px; }
+    @media(max-width:700px) { main{padding:32px 16px 48px} header{align-items:flex-start; flex-direction:column} .date-box{text-align:left} .layout{grid-template-columns:1fr} .fields{grid-template-columns:1fr 1fr} .fields label:first-child{grid-column:1/-1} }
+    @media(max-width:380px) { .fields{grid-template-columns:1fr} .fields label:first-child{grid-column:auto} .entry{gap:8px;padding:11px} }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div><p class="eyebrow">TRAINING LOG</p><h1>训练日记</h1><p class="subtitle">每一次训练，都值得被记下来。</p></div>
+      <label class="date-box">训练日期<input id="trainingDate" type="date"></label>
+    </header>
+
+    <div class="layout">
+      <section class="card" aria-labelledby="formTitle">
+        <h2 id="formTitle">记录一组训练</h2>
+        <form id="entryForm">
+          <div class="fields">
+            <label>训练动作<select id="exercise" required><option value="" disabled selected>选择训练动作</option><option>杠铃卧推</option><option>哑铃卧推</option><option>器械推胸</option><option>双杠臂屈伸</option><option>夹胸</option><option>哑铃推肩</option><option>哑铃侧平举</option><option>绳索侧平举</option><option>杠铃提拉</option><option>反向蝴蝶机飞鸟</option><option>绳索面拉</option><option>引体向上</option><option>高位下拉</option><option>单臂下拉</option><option>器械划船</option><option>绳索划船</option><option>T杆划船</option><option>悬垂举腿</option><option>杠铃深蹲</option><option>倒蹬</option><option>哈克深蹲</option><option>腿屈伸</option><option>腿内收</option><option>哑铃弯举</option><option>杠铃弯举</option><option>锤式弯举</option><option>绳索臂屈伸</option><option>直杆臂屈伸</option><option>杠铃臂屈伸</option><option>健腹轮</option></select></label>
+            <label>重量<div class="unit-wrap"><input id="weight" type="number" min="0" max="9999" step="0.5" placeholder="60" required><span class="unit">kg</span></div></label>
+            <label>次数<div class="unit-wrap"><input id="reps" type="number" min="1" max="999" step="1" placeholder="8" required><span class="unit">次</span></div></label>
+          </div>
+          <button class="add" type="submit">＋ 添加训练记录</button>
+        </form>
+        <p class="notice">数据保存在当前浏览器中，换设备或清除浏览器数据后不会同步。</p>
+        <div class="section-head"><h2>今日训练</h2><span id="todayLabel"></span></div>
+        <div id="entries" class="entries" aria-live="polite"></div>
+      </section>
+
+      <aside class="card">
+        <h2>训练概览</h2>
+        <div class="summary"><div class="stat"><strong id="setCount">0</strong><span>今日训练组数</span></div><div class="stat"><strong id="exerciseCount">0</strong><span>今日动作数</span></div></div>
+        <h2 style="font-size:15px;margin-bottom:8px">最近训练</h2>
+        <div id="history" class="history"></div>
+      </aside>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const STORAGE_KEY = 'training-log-v1';
+      const dateInput = document.getElementById('trainingDate');
+      const form = document.getElementById('entryForm');
+      const exerciseInput = document.getElementById('exercise');
+      const weightInput = document.getElementById('weight');
+      const repsInput = document.getElementById('reps');
+      const entriesEl = document.getElementById('entries');
+      const localDate = (date = new Date()) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      };
+      const readData = () => {
+        try {
+          const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          return Array.isArray(value) ? value : [];
+        } catch { return []; }
+      };
+      let records = readData();
+      const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      const prettyDate = (key) => {
+        const [y, m, d] = key.split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString('zh-CN', { month:'short', day:'numeric' });
+      };
+      const render = () => {
+        const selected = dateInput.value;
+        const todayRecords = records.filter(item => item.date === selected).sort((a,b) => a.createdAt - b.createdAt);
+        document.getElementById('todayLabel').textContent = `${prettyDate(selected)} · ${todayRecords.length} 组`;
+        document.getElementById('setCount').textContent = todayRecords.length;
+        document.getElementById('exerciseCount').textContent = new Set(todayRecords.map(item => item.exercise)).size;
+        entriesEl.replaceChildren();
+        if (!todayRecords.length) {
+          const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = '还没有训练记录，添加今天的第一组吧。'; entriesEl.append(empty);
+        } else {
+          todayRecords.forEach(item => {
+            const row = document.createElement('div'); row.className = 'entry';
+            const name = document.createElement('div');
+            const exercise = document.createElement('div'); exercise.className = 'exercise'; exercise.textContent = item.exercise;
+            const details = document.createElement('div'); details.className = 'details'; details.textContent = `${item.reps} 次`; name.append(exercise, details);
+            const load = document.createElement('div'); load.className = 'load'; load.textContent = `${item.weight} kg`;
+            const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'remove'; remove.setAttribute('aria-label', `删除${item.exercise}记录`); remove.textContent = '×';
+            remove.addEventListener('click', () => { records = records.filter(record => record.id !== item.id); save(); render(); });
+            row.append(name, load, remove); entriesEl.append(row);
+          });
+        }
+        const daily = new Map();
+        records.forEach(item => daily.set(item.date, (daily.get(item.date) || 0) + 1));
+        const latest = [...daily.entries()].sort((a,b) => b[0].localeCompare(a[0])).slice(0,5);
+        const historyEl = document.getElementById('history'); historyEl.replaceChildren();
+        if (!latest.length) { const empty = document.createElement('div'); empty.className = 'details'; empty.textContent = '完成训练后会显示在这里'; historyEl.append(empty); }
+        latest.forEach(([date, count]) => {
+          const row = document.createElement('div'); row.className = 'history-row';
+          const day = document.createElement('span'); day.className = 'history-date'; day.textContent = date === localDate() ? '今天' : prettyDate(date);
+          const amount = document.createElement('span'); amount.className = 'history-count'; amount.textContent = `${count} 组`;
+          row.append(day, amount); historyEl.append(row);
+        });
+      };
+      dateInput.value = localDate();
+      dateInput.addEventListener('change', render);
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        records.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, date: dateInput.value, exercise: exerciseInput.value.trim(), weight: Number(weightInput.value), reps: Number(repsInput.value), createdAt: Date.now() });
+        save(); form.reset(); exerciseInput.focus(); render();
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
